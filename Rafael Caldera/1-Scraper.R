@@ -46,3 +46,5 @@ for(i in 1:length(links)){
   #date <- unlist(str_split(description, " ")) %>% .[which(digit_present == TRUE)[1]:which(digit_present == TRUE)[2]] %>% paste(., collapse = " ")
   caldera_corpus <- rbind(caldera_corpus, data.table("title" = title, "description" = description, "year" = year, "date" = date, "text" = text))
 }
+
+saveRDS(caldera_corpus, "/Users/pedrorodriguez/Dropbox/Research/Divisive Rhetoric/Caldera/caldera_corpus.rds")
