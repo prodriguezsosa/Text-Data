@@ -1,5 +1,4 @@
 # Text-Data
-Make available scraped text.
 
 In this repository I make available text I've scraped along with the code used to scrape and pre-process.
 
