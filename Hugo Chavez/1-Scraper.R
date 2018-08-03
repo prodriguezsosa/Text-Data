@@ -1,19 +1,17 @@
-###########################################
-# Task: scrape todochavez.com
-# Date begun: 10-17-2017
-# Date last modified: 11-19-2017
-############################################
+#===========================================
+# purpose: scrape todochavez.com
+# first commit: 10-17-2017
+# most recent commit: 08-03-18
+#===========================================
 
-##################################
-#
-#
+#===========================================
 # SCRAPE LINKS
-#
-#
-##################################
+#===========================================
 
 rm(list=ls())
 library(RSelenium)
+
+in_path <- "~/Dropbox/GitHub/Text-Data/Hugo Chavez/"
 
 # FIRST: 
 # manually open Selenium Server on the terminal by running Selenium Server binary
@@ -68,39 +66,32 @@ for(i in 1:5){
 remDr$close()
 # IMPORTANT: on the terminal press "Ctrl + C" to close driver
 # save list of links
-saveRDS(links, "/Users/pedrorodriguez/Dropbox/Research/WordEmbeddings/Venezuela/Output/scraping/links.rds")
+saveRDS(links, paste0(in_path, "links.rds"))
 
-##################################
-#
-#
+#===========================================
 # SCRAPE TEXT USING SCRAPED LINKS
-#
-#
-##################################
+#===========================================
 rm(list = ls())
 # libraries
 library(rvest)
 library(data.table)
 library(dplyr)
 # load links
-links <- readRDS("/Users/pedrorodriguez/Dropbox/Research/WordEmbeddings/Venezuela/Output/scraping/links.rds")
+links <- readRDS(paste0(in_path, "links.rds"))
 # remove full stop at beginnig of link ending
 links <- lapply(links, function(x) gsub("^\\.", "", x))
 
 # define base url
 url_base <- "http://www.todochavezenlaweb.gob.ve/todochavez"
 
-########################################################################
+#===========================================
 # FUNCTION: scrape_link
 #
 # input1: link = link ending scraped above
 # input2: type = type of discourse (see list(names(links) for options)
 #
 # output: data.table with six variables (type, subtype, title, date, address, text)
-#
-#
-#
-########################################################################
+#===========================================
 scrape_link <- function(link, type){
   url <- paste0(url_base, link)
   webpage <- read_html(url)
@@ -135,5 +126,4 @@ chavez_discourse <- lapply(names(links), function(x) apply_scrape_link(x))
 # bind all discourse types
 chavez_discourse <- rbindlist(chavez_discourse, use.names = TRUE)
 # save data
-saveRDS(chavez_discourse, "/Users/pedrorodriguez/Dropbox/Research/WordEmbeddings/Venezuela/Output/scraping/chavez_discourse.rds")
-
+saveRDS(chavez_discourse, paste0(in_path, "chavez_discourse.rds"))
