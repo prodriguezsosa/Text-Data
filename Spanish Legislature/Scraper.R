@@ -125,7 +125,11 @@ return(string)
 # function to scrape text
 scrapeText <- function(link){
   url <- paste0(url_base, link)
-  page <- url %>% read_html()
+  page <- NULL
+  #suppressWarnings(page <- read_html(url)) # to avoid stopping due to failed connections
+  tryCatch(page <- read_html(url), error=function(e){}) # to avoid stopping due to failed connections
+  if(length(page) == 2){
+  Sys.sleep(2)
   # meta info
   meta <- page %>% html_nodes(xpath = '//*[(@id = "CABECERA_TEXTO_POPUP")]') %>% html_text
   meta <- meta[2] %>% convert_latin1(.) %>% str_replace_all("^ +| +$|( ) +", "\\1") 
@@ -135,7 +139,9 @@ scrapeText <- function(link){
   text <- str_split(text, "\n\n") %>% unlist # separate by sentence
   text <- str_replace_all(text, "\\n", " ") %>% unlist  # remove spacing symbols
   text <- str_replace_all(text, "^ +| +$|( ) +", "\\1")  # remove excess white space
-  return(list("text" = text, "meta" = meta))
+  result <- list("text" = text, "meta" = meta)
+  }else{result <- "fail"}
+  return(result)
 }
 
 # load links
@@ -147,10 +153,17 @@ url_base <- "http://www.congreso.es"
 corpus <- list()
 start_time <- Sys.time() # this takes about 1hr on my old mac pro laptop
 for(i in 1:length(links_all)){
-  links_i <- links_all[[i]]
-  #links_i <- links_i[1:5]
-  corpus[[i]] <- pblapply(links_i, scrapeText)
   print(i)
+  links_i <- links_all[[i]] %>% unlist
+  #links_i <- links_i[1:5]
+  pb <- progress_bar$new(total = length(links_i))
+  corpus_i <- list()
+  for(j in 1:length(links_i)){
+  corpus_i[[j]] <-scrapeText(links_i[j])
+  pb$tick()
+  }
+  #corpus[[i]] <- pblapply(links_i, scrapeText)
+  corpus[[i]] <- corpus_i
 }
 Sys.time() - start_time
 
