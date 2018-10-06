@@ -6,6 +6,8 @@ library(stringr)
 library(data.table)
 library(quanteda)
 library(magrittr)
+library(progress)
+library(pbapply)
 
 # ================================
 #
@@ -120,6 +122,66 @@ string <- lapply(string, function(x) iconv(x, "UTF-8", "LATIN1")) %>% unlist %>%
 return(string)
 }
 
+# function to scrape text
+scrapeText <- function(link){
+  url <- paste0(url_base, link)
+  page <- url %>% read_html()
+  # meta info
+  meta <- page %>% html_nodes(xpath = '//*[(@id = "CABECERA_TEXTO_POPUP")]') %>% html_text
+  meta <- meta[2] %>% convert_latin1(.) %>% str_replace_all("^ +| +$|( ) +", "\\1") 
+  # text 
+  text <- page %>% html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "texto_completo", " " ))]') %>% html_text
+  text <- convert_latin1(text) # convert special characters
+  text <- str_split(text, "\n\n") %>% unlist # separate by sentence
+  text <- str_replace_all(text, "\\n", " ") %>% unlist  # remove spacing symbols
+  text <- str_replace_all(text, "^ +| +$|( ) +", "\\1")  # remove excess white space
+  return(list("text" = text, "meta" = meta))
+}
+
+# load links
+links_all <- readRDS("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/Spanish Legislature/Scraper/links.rds")
+
+url_base <- "http://www.congreso.es"
+#corpus_text <- list()
+#corpus_meta <- list()
+corpus <- list()
+start_time <- Sys.time() # this takes about 1hr on my old mac pro laptop
+for(i in 1:length(links_all)){
+  links_i <- links_all[[i]]
+  #links_i <- links_i[1:5]
+  # loop version
+  #corpus_i <- list()
+  #meta_i <- list()
+  #for(j in 1:length(links_i)){
+  #  url <- paste0(url_base, links_i[j])
+  #  page <- url %>% read_html()
+  #  # meta info
+  #  meta <- page %>% html_nodes(xpath = '//*[(@id = "CABECERA_TEXTO_POPUP")]') %>% html_text
+  #  meta <- meta[2] %>% convert_latin1(.) %>% str_replace_all("^ +| +$|( ) +", "\\1") 
+  #  # text 
+  #  text <- page %>% html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "texto_completo", " " ))]') %>% html_text
+  #  text <- convert_latin1(text) # convert special characters
+  #  text <- str_split(text, "\n\n") %>% unlist # separate by sentence
+  #  text <- str_replace_all(text, "\\n", " ") %>% unlist  # remove spacing symbols
+  #  text <- str_replace_all(text, "^ +| +$|( ) +", "\\1")  # remove excess white space
+  #  # save
+  #  corpus_i[[j]] <- text
+  #  meta_i[[j]] <- meta
+  #  #Sys.sleep(2)
+  #}
+  #corpus_text[[i]] <- corpus_i
+  #corpus_meta[[i]] <- meta_i
+  # lapply version
+  corpus[[i]] <- pblapply(links_i, scrapeText)
+  print(i)
+}
+Sys.time() - start_time
+
+# ================================
+#
+# PRE-PROCESSING
+#
+# ================================
 # function to remove speakers
 remove_speakers <- function(string){
   string <- str_split(string, ":") %>% unlist
@@ -129,44 +191,7 @@ remove_speakers <- function(string){
   return(string)
 }
 
-# load links
-links_all <- readRDS("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/Spanish Legislature/Scraper/links.rds")
 
-url_base <- "http://www.congreso.es"
-corpus_text <- list()
-corpus_meta <- list()
-start_time <- Sys.time() # this takes about 1hr on my old mac pro laptop
-for(i in 1:length(links_all)){
-  links_i <- links_all[[i]]
-  corpus_i <- list()
-  meta_i <- list()
-  for(j in 1:length(links_i)){
-    url <- paste0(url_base, links_i[j])
-    page <- url %>% read_html()
-    # meta info
-    meta <- page %>% html_nodes(xpath = '//*[(@id = "CABECERA_TEXTO_POPUP")]') %>% html_text
-    meta <- meta[2] %>% convert_latin1(.) %>% str_replace_all("^ +| +$|( ) +", "\\1") 
-    # text 
-    text <- page %>% html_nodes(xpath = '//*[contains(concat( " ", @class, " " ), concat( " ", "texto_completo", " " ))]') %>% html_text
-    text <- convert_latin1(text) # convert special characters
-    text <- str_split(text, "\n\n") %>% unlist # separate by sentence
-    text <- str_replace_all(text, "\\n", " ") %>% unlist  # remove spacing symbols
-    text <- str_replace_all(text, "^ +| +$|( ) +", "\\1")  # remove excess white space
-    # save
-    corpus_i[[j]] <- text
-    meta_i[[j]] <- meta
-    #Sys.sleep(2)
-  }
-  corpus_text[[i]] <- corpus_i
-  corpus_meta[[i]] <- meta_i
-}
-Sys.time() - start_time
-
-# ================================
-#
-# PRE-PROCESSING
-#
-# ================================
 text <- lapply(text, remove_speakers) %>% unlist # remove speakers
 text <- chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", text) # replace accents
 text <- str_replace_all(text, "^ +| +$|( ) +", "\\1")  # remove excess white space
