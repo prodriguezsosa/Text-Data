@@ -167,6 +167,8 @@ for(i in 1:length(links_all)){
 }
 Sys.time() - start_time
 
+saveRDS(corpus, "/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/Spanish Legislature/Scraper/corpus.rds")
+
 # ================================
 #
 # PRE-PROCESSING
