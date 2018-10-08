@@ -151,6 +151,7 @@ url_base <- "http://www.congreso.es"
 #corpus_text <- list()
 #corpus_meta <- list()
 corpus <- list()
+#corpus <- readRDS("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/Spanish Legislature/Scraper/corpus.rds")
 start_time <- Sys.time() # this takes about 1hr on my old mac pro laptop
 for(i in 1:length(links_all)){
   print(i)
