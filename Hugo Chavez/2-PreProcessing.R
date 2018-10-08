@@ -1,42 +1,24 @@
 #============================================
 # purpose: pre-process output from Scrape.R
 # first commit: 10-18-2017
-# most recent commit: 08-03-2018
+# most recent commit: 10-08-2018
 #============================================
 rm(list=ls())
 library(tidyr)
 library(dplyr)
 library(stringr)
+library(text2vec)
+library(pbapply)
 
-in_path <- "~/Dropbox/GitHub/Text-Data/Hugo Chavez/"
+in_path <- "~/Dropbox/Research/WordEmbeddings/Venezuela/Output/scraping/"
+in_path_buggy <- "~/Dropbox/Research/WordEmbeddings/Venezuela/Inputs/"
+out_path <- "~/Dropbox/Research/WordEmbeddings/Venezuela/Output/preprocessing/"
 # load scraped documents and convert to tbl class
 texts <- paste0(in_path, "chavez_discourse.rds") %>% readRDS %>% tbl_df 
 
 #============================================
-# BUGGY CHARACTERS
-#============================================
-#texts <- texts %>% mutate(text = iconv(text, to = "UTF-8"))  # does not help
-# NOTE: buggy characters don't seem map uniquely to non-buggy characters
-# otherwise we could simply substitute them for the expected character (see http://www.i18nqa.com/debug/utf8-debug.html)
-# e.g. Ã: in some cases it clearly should be substituted with á, in others for ó
-# until we figure out what is going on with the encoding, best remove documents with buggy characters
-# Ã is the most common, it is likely to be present conditional on any buggy character being present
-buggy <- texts[,"text"] %>% lapply(function(x) grepl("Ã", x)) %>% unlist 
-# documents with buggy characters represent less than 2% of the documents
-table(buggy)
-# drop documents with buggy characters (107 out of 6123)
-texts <- filter(texts, !buggy)
-  
-#============================================
-# CLEAN COVARIATES
-#============================================
-# remove accents and other special characters
-texts[,"type"] <- lapply(texts[,"type"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
-texts[,"subtype"] <- lapply(texts[,"subtype"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
-texts[,"title"] <- lapply(texts[,"title"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
-texts[,"address"] <- lapply(texts[,"address"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
-
 # fix mis-assigned type labels (this required manual checking)
+#============================================
 index <- which(texts$type %in% c("1:40 PM", "10:25 AM", "12:34 AM", "2:00 AM - 4:00 AM", "3:45 PM", "5:00 PM"))
 texts[index, "type"] <- texts[index, "subtype"]
 texts[index, "subtype"] <- texts[index, "address"]
@@ -63,6 +45,38 @@ texts[texts$subtype %in% c("Twitter @chavezcandanga"), "text"] <- texts[texts$su
 texts[texts$subtype %in% c("Twitter @chavezcandanga"), "address"] <- NA
 
 #============================================
+# BUGGY CHARACTERS
+#============================================
+# load buggy character table
+# source: http://www.i18nqa.com/debug/utf8-debug.html
+char_table <- readRDS(paste0(in_path_buggy, "buggy_character_conversion_table.rds"))
+
+# function to convert to LATIN1
+convert_latin1 <- function(string){ 
+  string <- space_tokenizer(string) %>% unlist
+  string <- lapply(string, function(x) iconv(x, "UTF-8", "LATIN1")) %>% unlist %>% paste(collapse = " ")
+  return(string)
+}
+
+# identify buggy texts
+buggy <- texts[,"text"] %>% pblapply(function(x) grepl(paste(char_table$Actual, collapse="|"), x)) %>% unlist %>% unname
+#texts$text[buggy]  <- lapply(texts$text[buggy], convert_latin1) %>% unlist
+texts$type[buggy]  <- lapply(texts$type[buggy], convert_latin1) %>% unlist
+texts$subtype[buggy] <- lapply(texts$subtype[buggy], convert_latin1) %>% unlist
+texts$title[buggy] <- lapply(texts$title[buggy], convert_latin1) %>% unlist
+texts$address[buggy] <- lapply(texts$address[buggy], convert_latin1) %>% unlist
+
+#============================================
+# CLEAN COVARIATES
+#============================================
+# remove accents and other special characters
+texts[,"type"] <- lapply(texts[,"type"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
+texts[,"subtype"] <- lapply(texts[,"subtype"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
+texts[,"title"] <- lapply(texts[,"title"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
+texts[,"address"] <- lapply(texts[,"address"], function(x) chartr("ãâàèìòùáéíóöúüûñÀÈÌÒÙÁÉÍÓÚÑ", "aaaeiouaeioouuunAEIOUAEIOUN", x)) %>% unlist
+texts[,"title"] <- lapply(texts[,"title"], function(x) gsub(paste("N°", "Nº", sep = "|"), "", x)) %>% unlist
+
+#============================================
 # CLEAN TEXT
 #============================================
 # perform non-word specific pre-processing (needs to be done on full texts)
@@ -76,9 +90,9 @@ texts[,"text"] <- lapply(texts[,"text"], function(x) chartr("ãâàèìòùáé�
 texts <- texts %>% mutate(text = tolower(text))                                         # lower case
 texts <- texts %>% mutate(text = str_replace_all(text, "[^[:alpha:]]", " "))            # replace non-alpha characters
 texts <- texts %>% mutate(text = str_replace_all(text, "([a-km-qs-z])\\1+", "\\1"))     # remove repeated letters except rr and ll (e.g. gooool)
-texts <- texts %>% mutate(text = str_replace_all(text, "\\b\\w{1,3}\\b", ""))           # remove 1-3 letter words
+#texts <- texts %>% mutate(text = str_replace_all(text, "\\b\\w{1,3}\\b", ""))           # remove 1-3 letter words
 texts <- texts %>% mutate(text = str_replace_all(text, "^ +| +$|( ) +", "\\1"))         # remove excess white space
 texts <- filter(texts, text!="" & !is.na(text))                                         # drop tokens that were deleted as a result of preprocessing
 
 # save
-saveRDS(texts, paste0(in_path, "chavez_discourse_preprocessed.rds"))
+saveRDS(texts, paste0(out_path, "chavez_discourse_preprocessed.rds"))
