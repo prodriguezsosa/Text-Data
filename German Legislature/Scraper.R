@@ -132,56 +132,29 @@ ScrapeText <- function(url_pdf){
   # keep content
   doc <- content(document[[1]])
   
+  # delete PDF
+  if(file.exists(file_name)){file.remove(file_name)}
+  
   # identify relevant content (reading the texts I identified (A) as an indicator of where the debate transcripts begin)
   line_begin <- which(grepl("\\(A\\)", doc))[1] 
   doc <- doc[line_begin:length(doc)] # each item is a page
   
   # split text by line
-  doc_split <- lapply(doc, str_split("\\\n")) %>% unlist
+  doc_split <- lapply(doc, function(x) str_split(x, "\\\n")) %>% unlist(recursive = FALSE)
   return(doc_split)
 } 
 
 corpus <- list()
-for(i in 1:length(legislature)){
-  pdf_texts <- list()
-  for(j in 1:length(links_all[[i]])){
-    url_pdf <- links_all[[i]][[j]]
-    # download pdf
-    file_name <- str_split(url_pdf, pattern = "/") %>% unlist %>% .[length(.)]
-    pdf_file <- download.file(url_pdf, file_name, mode="wb")
-    
-    # scrape pdf
-    document <- Corpus(URISource(file_name), readerControl = list(reader = read))
-    
-    # keep content
-    doc <- content(document[[1]])
-    
-    # delete PDF file
-    if(file.exists(file_name)){file.remove(file_name)}
-    
-    # identify relevant content (reading the texts I identified (A) as an indicator of where the debate transcripts begin)
-    line_begin <- which(grepl("\\(A\\)", doc))[1] 
-    doc <- doc[line_begin:length(doc)] # each item is a page
-    
-    # split text by line
-    #doc_split <- lapply(doc, function(x) str_split(x, "\\\n")) %>% unlist
-    
-    # apply to all pages
-    pdf_texts[[j]] <- pblapply(doc, organizeText)
-  }
-  corpus[[i]] pdf_texts
+for(i in 1:1){
+  url_pdf <- links_all[[i]]
+  corpus[[i]] <- lapply(url_pdf, ScrapeText)
 }
-
 
 # ================================
 #
-# CLEAN TEXT
-# inspiration: https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e
+# ORGANIZE TEXT
+# 
 # ================================
-library(tm)
-# file to temporarily save PDFs
-setwd("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/German Legislature/PDFs/")
-
 # FUNCTIONS
 # function to organize text in a given sentence
 organizeSentence <- function(sent_i){
@@ -201,14 +174,14 @@ organizeText <- function(doc_i){ # doc_i is the output of lapply(doc, str_split(
   # split by sentence 
   #doc_split <- str_split(doc_i, "\\\n") %>% unlist
   # if there is a character in location 60, it is header text
-  header_text <- lapply(doc_split, function(x) grepl("[[:alpha:]]", substring(x, 60, last = 65)))  %>% unlist
-  doc_split <- doc_split[!header_text]
+  header_text <- lapply(doc_i, function(x) grepl("[[:alpha:]]", substring(x, 60, last = 65)))  %>% unlist
+  doc_i <- doc_i[!header_text]
   # eliminate parentheses and brackets text
-  doc_split <- str_replace_all(doc_split, "\\[.*?\\]", " ") # remove content in brackets (tends to be descriptive)
-  doc_split <- str_replace_all(doc_split, "\\(.*?\\)", " ") # remove content in parentheses (tends to be descriptive)
-  doc_split <- doc_split[grepl("[[:alpha:]]", doc_split)] # keep only lines with text
+  doc_i <- str_replace_all(doc_i, "\\[.*?\\]", " ") # remove content in brackets (tends to be descriptive)
+  doc_i <- str_replace_all(doc_i, "\\(.*?\\)", " ") # remove content in parentheses (tends to be descriptive)
+  doc_i <- doc_i[grepl("[[:alpha:]]", doc_i)] # keep only lines with text
   # split into columns
-  result <- lapply(doc_split, organizeSentence) %>% unlist(recursive = FALSE) %>% unlist
+  result <- lapply(doc_i, organizeSentence) %>% unlist(recursive = FALSE) %>% unlist
   result_col1 <- paste(result[which(names(result) == "column1")], collapse = " ") %>% str_trim %>% str_squish
   result_col2 <- paste(result[which(names(result) == "column2")], collapse = " ") %>% str_trim %>% str_squish
   result <- paste(result_col1, result_col2, collapse = " ")
@@ -217,31 +190,9 @@ organizeText <- function(doc_i){ # doc_i is the output of lapply(doc, str_split(
   return(result)
 }
 
-# create PDF extracting function
-read <- readPDF(control = list(text = "-layout"))
-
-corpus <- list()
-for(i in 1:length(legislature)){
-  pdf_texts <- list()
-  for(j in 1:length(links_all[[i]])){
-    url_pdf <- links_all[[i]][[j]]
-    # download pdf
-    file_name <- str_split(url_pdf, pattern = "/") %>% unlist %>% .[length(.)]
-    pdf_file <- download.file(url_pdf, file_name, mode="wb")
-    
-    # scrape pdf
-    document <- Corpus(URISource(file_name), readerControl = list(reader = read))
-    
-    # keep content
-    doc <- content(document[[1]])
-    
-    # identify relevant content (reading the texts I identified (A) as an indicator of where the debate transcripts begin)
-    line_begin <- which(grepl("\\(A\\)", doc))[1] 
-    doc <- doc[line_begin:length(doc)] # each item is a page
-    
-    # apply to all pages
-    pdf_texts[[j]] <- pblapply(doc, organizeText)
-  }
-  corpus[[i]] pdf_texts
+corpus_clean <- list()
+for(i in 1:1){
+  corpus_i <- corpus[[i]] %>% unlist(recursive = FALSE)
+  corpus_clean[[i]] <- lapply(corpus_i, organizeText)
 }
 
