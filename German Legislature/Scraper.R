@@ -46,7 +46,7 @@ start_time <- Sys.time() # this takes aboyt 1hr on my old mac pro laptop
 # loop over all legislatures
 remDr$open()  # open window
 pb <- progress_bar$new(total = length(legislature))
-for(i in 3:length(legislature)){
+for(i in 1:length(legislature)){
   # ================================
   # go to page with texts for a given legislature
   # ================================
@@ -103,8 +103,7 @@ Sys.time() - start_time
 # IMPORTANT: on the terminal press "Ctrl + C" to close driver
 # save list of links
 names(links_all) <- unlist(legislature)
-saveRDS(links_all, "/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/German Legislature/Scraper/links.rds")
-
+saveRDS(links_all, "/Volumes/Potosi/Research/German Legislature/links.rds")
 
 # ================================
 #
@@ -112,6 +111,7 @@ saveRDS(links_all, "/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/German Legisl
 # inspiration: https://medium.com/@CharlesBordet/how-to-extract-and-clean-data-from-pdf-files-in-r-da11964e252e
 # ================================
 library(tm)
+#links_all <- readRDS("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/German Legislature/Scraper/links.rds")
 # file to temporarily save PDFs
 setwd("/Users/pedrorodriguez/Dropbox/GitHub/Text-Data/German Legislature/PDFs/")
 
@@ -124,8 +124,10 @@ ScrapeText <- function(url_pdf){
   #url_pdf <- links_all[[i]][[j]]
   # download pdf
   file_name <- str_split(url_pdf, pattern = "/") %>% unlist %>% .[length(.)]
-  pdf_file <- download.file(url_pdf, file_name, mode="wb")
-  
+  pdf_file <- NULL
+  tryCatch(pdf_file <- download.file(url_pdf, file_name, mode="wb"), error=function(e){}) # to avoid stopping due to failed connections
+  Sys.sleep(5)
+  if(!is.null(pdf_file)){
   # scrape pdf
   document <- Corpus(URISource(file_name), readerControl = list(reader = read))
   
@@ -136,19 +138,29 @@ ScrapeText <- function(url_pdf){
   if(file.exists(file_name)){file.remove(file_name)}
   
   # identify relevant content (reading the texts I identified (A) as an indicator of where the debate transcripts begin)
-  line_begin <- which(grepl("\\(A\\)", doc))[1] 
+  line_begin <- which(grepl("\\(A\\)", doc))[1]
+  if(!is.na(line_begin)){
   doc <- doc[line_begin:length(doc)] # each item is a page
   
   # split text by line
   doc_split <- lapply(doc, function(x) str_split(x, "\\\n")) %>% unlist(recursive = FALSE)
+  }else{
+    doc_split <- NA
+  }}else{
+    doc_split <- NA
+  }
   return(doc_split)
 } 
 
 corpus <- list()
-for(i in 1:1){
+pb <- progress_bar$new(total = length(legislature))
+for(i in 2:length(legislature)){
   url_pdf <- links_all[[i]]
   corpus[[i]] <- lapply(url_pdf, ScrapeText)
+  pb$tick()
 }
+
+saveRDS(corpus, "/Volumes/Potosi/Research/German Legislature/corpus.rds")
 
 # ================================
 #
@@ -170,6 +182,7 @@ organizeSentence <- function(sent_i){
 
 # function to organize text in a given page
 organizeText <- function(doc_i){ # doc_i is the output of lapply(doc, str_split("\\\n")) %>% unlist
+  if(!is.na(doc_i)){
   #doc_i <- doc[1]
   # split by sentence 
   #doc_split <- str_split(doc_i, "\\\n") %>% unlist
@@ -187,6 +200,9 @@ organizeText <- function(doc_i){ # doc_i is the output of lapply(doc, str_split(
   result <- paste(result_col1, result_col2, collapse = " ")
   # remove word splits
   result <- gsub("- ", "", result)
+  }else{
+    result <- NA
+  }
   return(result)
 }
 
