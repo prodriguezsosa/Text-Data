@@ -167,48 +167,72 @@ saveRDS(corpus, "/Volumes/Potosi/Research/German Legislature/corpus.rds")
 # ORGANIZE TEXT
 # 
 # ================================
+corpus <- readRDS("/Volumes/Potosi/Research/German Legislature/corpus.rds")
+
+# for testing
+legislature_i <- corpus[[1]]
+doc_i <- legislature_i[[1]]
+page_i <- doc_i[[1]]
+sent_i <- page_i[1]
+
 # FUNCTIONS
 # function to organize text in a given sentence
 organizeSentence <- function(sent_i){
-  #sent_i <- doc_split[11]
-  # determine length of text
-  if(nchar(sent_i) > 60){
-    sent_i <- data.table("column1" = substring(sent_i, 1, last = 60), "column2" = substring(sent_i, 60, last = 1000000L))
-  }else{
+  if(nchar(sent_i) > 60){ # determine length of text to evaluate if it has one or two columns
+    # e.g. [1] "       Vizepräsidentin Petra Bläss: Guten Tag, liebe                     mit 9,8 Prozent wieder das beste Ergebnis erzielt. Eine"
+    # manual inspection of a subset of the documents suggests 60 as a pt of column split (1000000L = select to end)  
+      sent_i <- data.table("column1" = substring(sent_i, 1, last = 60), "column2" = substring(sent_i, 60, last = 1000000L))
+  }else{ # if nchar(sent_i) <= 60, sentence only has one column
     sent_i <- data.table("column1" = sent_i, "column2" = "")
   }
   return(sent_i)
 }
 
 # function to organize text in a given page
-organizeText <- function(doc_i){ # doc_i is the output of lapply(doc, str_split("\\\n")) %>% unlist
-  if(!is.na(doc_i)){
-  #doc_i <- doc[1]
-  # split by sentence 
-  #doc_split <- str_split(doc_i, "\\\n") %>% unlist
-  # if there is a character in location 60, it is header text
-  header_text <- lapply(doc_i, function(x) grepl("[[:alpha:]]", substring(x, 60, last = 65)))  %>% unlist
-  doc_i <- doc_i[!header_text]
+organizePage <- function(page_i){
+  #legislature_i <- corpus[[1]]
+  #doc_i <- legislature_i[[1]]
+  #page_i <- doc_i[[1]]
+  #sent_i <- page_i[1]
+  #if(!is.na(page_i)){
+  # if there is a character in the middle of the space, it is header text
+  #e.g.: [1] "                         Deutscher Bundestag – 14. Wahlperiode – 78. Sitzung. Berlin, Mittwoch, den 15. Dezember 1999         7121"
+  header_text <- lapply(page_i, function(x) grepl("[[:alpha:]]", substring(x, 60, last = 65)))  %>% unlist
+  page_i <- page_i[!header_text] # delete al sentences on page that are header text
   # eliminate parentheses and brackets text
-  doc_i <- str_replace_all(doc_i, "\\[.*?\\]", " ") # remove content in brackets (tends to be descriptive)
-  doc_i <- str_replace_all(doc_i, "\\(.*?\\)", " ") # remove content in parentheses (tends to be descriptive)
-  doc_i <- doc_i[grepl("[[:alpha:]]", doc_i)] # keep only lines with text
+  page_i <- str_replace_all(page_i, "\\[.*?\\]", " ") # remove content in brackets (tends to be descriptive)
+  page_i <- str_replace_all(page_i, "\\(.*?\\)", " ") # remove content in parentheses (tends to be descriptive)
+  page_i <- page_i[grepl("[[:alpha:]]", page_i)] # keep only lines with text
   # split into columns
-  result <- lapply(doc_i, organizeSentence) %>% unlist(recursive = FALSE) %>% unlist
+  result <- lapply(page_i, organizeSentence) %>% unlist(recursive = FALSE) %>% unlist
   result_col1 <- paste(result[which(names(result) == "column1")], collapse = " ") %>% str_trim %>% str_squish
   result_col2 <- paste(result[which(names(result) == "column2")], collapse = " ") %>% str_trim %>% str_squish
   result <- paste(result_col1, result_col2, collapse = " ")
   # remove word splits
   result <- gsub("- ", "", result)
-  }else{
-    result <- NA
-  }
+  # split by speakers
+  result <- str_split(result, ":") %>% lapply(.,str_trim) %>% lapply(.,str_squish) %>% unlist(recursive = FALSE)
+  #}else{
+  #  result <- NA
+  #}
   return(result)
 }
 
-corpus_clean <- list()
-for(i in 1:1){
-  corpus_i <- corpus[[i]] %>% unlist(recursive = FALSE)
-  corpus_clean[[i]] <- lapply(corpus_i, organizeText)
+organizeDocument <- function(doc_i){
+  doc_i <- lapply(doc_i, organizePage) %>% unlist
+  return(doc_i)
 }
 
+organizeLegislature <- function(legislature_i){
+  legislature_i <- pblapply(legislature_i, organizeDocument) %>% unlist
+  return(legislature_i)
+}
+
+corpus_clean <- list()
+for(i in 2:length(corpus)){
+  legislature_i <- corpus[[i]]
+  corpus_clean[[i]] <- organizeLegislature(legislature_i)
+  print(i)
+}
+
+saveRDS(corpus_clean, "/Volumes/Potosi/Research/German Legislature/corpus_clean.rds")
