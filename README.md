@@ -26,4 +26,12 @@ Source: http://www.presidency.ucsb.edu/2016_election.php (last accessed Aug-03-2
 [Link to Data - Clinton (1.24 MB)](https://www.dropbox.com/s/gg6kw77m1axo6tp/clinton_texts.RData?dl=0)\
 [Link to Data - Sanders (340.38 KB)](https://www.dropbox.com/s/i3a1m4r4gis18w6/sanders_texts.RData?dl=0)
 
+**5. [Spanish Legislature (V - XII)](https://en.wikipedia.org/wiki/Cortes_Generales):**\
+Type of text: legislature transcripts\
+Source: http://www.congreso.es/portal/page/portal/Congreso/Congreso/Publicaciones (last accessed Oct-08-2018)\
+[Link to Data (714.5 MB)](https://www.dropbox.com/sh/bo2ennby1d5jve3/AAB1xfdpxVe9Z6OonADbJ5uDa?dl=0)
 
+**6. [German Legislature (Wahlperiode 14 - 19 (10.15.2018))](https://en.wikipedia.org/wiki/Bundestag):**\
+Type of text: legislature transcripts\
+Source: http://pdok.bundestag.de/index.php?q=plenarprotokoll&dart=Plenarprotokoll (last accessed Oct-15-2018)\
+[Link to Data (497 MB)](https://www.dropbox.com/sh/297wb8ej7ojuhf6/AACW2XXIzl5pQJAGLjFuifA1a?dl=0)
