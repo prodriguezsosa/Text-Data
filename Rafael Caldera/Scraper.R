@@ -6,13 +6,14 @@ library(rvest)
 library(XML)
 library(stringr)
 library(data.table)
+library(progress)
 
 #====================================
 # SCRAPE LINKS
 #====================================
 "http://rafaelcaldera.com/categoria-biblioteca/articulos/"
 caldera_corpus <- data.table() 
-for(j in c("discursos", "articulos")){ 
+for(j in c("discursos", "articulos", "conferencias")){ 
 # download links to discourses
 url <- paste0("http://rafaelcaldera.com/categoria-biblioteca/", j, "/") # base url
 doc <- htmlParse(url)
@@ -23,6 +24,8 @@ free(doc)
 # SCRAPE EACH LINK
 #====================================
 
+print(j)
+pb <- progress_bar$new(total = length(links))
 for(i in 1:length(links)){
   # specify the url of the website to be scraped
   url <- links[i]
@@ -48,7 +51,7 @@ for(i in 1:length(links)){
   # collapse
   text <- paste(text, collapse = " ")
   # extract title and description
-  html <- htmlParse(url, useInternalNodes=T)
+  html <- htmlParse(sub("s", "", url), useInternalNodes=T)
   title <- unname(unlist(html['//meta[@property="og:title"]/@content']))
   description <- unname(unlist(html['//meta[@property="og:description"]/@content']))
   # extract year from title
@@ -60,7 +63,8 @@ for(i in 1:length(links)){
   # if year is missing, extract from date (will retunr NA if it's also missing from date)
   if(is.na(year)){year <- str_extract(date, "\\d{4}")}
   caldera_corpus <- rbind(caldera_corpus, data.table(type = j, "title" = title, "description" = description, "year" = year, "date" = date, "text" = text))
-}
+  pb$tick()
+  }
 }
 
 saveRDS(caldera_corpus, "/Users/pedrorodriguez/Dropbox/Research/Divisive Rhetoric/Caldera/caldera_corpus.rds")
