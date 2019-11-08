@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=02:30:00
+#SBATCH --mem=10GB
+#SBATCH --job-name=TextScraper
+#SBATCH --mail-type=END
+#SBATCH --mail-user=plr250@nyu.edu
+
+module purge
+module load r/intel/3.6.0
+
+R --no-save -q -f TextScraper.R --args SEGMENT

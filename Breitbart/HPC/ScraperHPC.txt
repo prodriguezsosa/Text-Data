@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --time=00:30:00
+#SBATCH --mem=5GB
+#SBATCH --job-name=LinkScraper
+#SBATCH --mail-type=END
+#SBATCH --mail-user=plr250@nyu.edu
+
+module purge
+module load r/intel/3.6.0
+
+R --no-save -q -f ScraperHPC.R --args SEGMENT
