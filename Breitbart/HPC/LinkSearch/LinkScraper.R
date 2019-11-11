@@ -4,6 +4,15 @@
 # first commit: 11-06-2019
 # most recent commit: 11-07-2019
 #===========================================
+
+"https://www.breitbart.com/search/?s=2019%2F09%2F10%2F#gsc.tab=0&gsc.q=2019%2F09%2F10%2F&gsc.page=1"
+"https://www.breitbart.com/search/?s=2019%2F09%2F10%2F#gsc.tab=0&gsc.q=2019%2F09%2F10%2F&gsc.page=10"
+
+"https://www.breitbart.com/search/?s=2009%2F09%2F10%2F#gsc.tab=0&gsc.q=2009%2F09%2F10%2F&gsc.page=1"
+
+
+"https://www.breitbart.com/search/?s=2009%2F09%2F#gsc.tab=0&gsc.q=2009%2F09%2F&gsc.page=1"
+
 rm(list=ls())
 library(rvest)
 library(dplyr)

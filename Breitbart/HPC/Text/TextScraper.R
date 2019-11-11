@@ -2,7 +2,7 @@
 #===========================================
 # purpose: scrape breitbart
 # first commit: 11-06-2019
-# most recent commit: 11-07-2019
+# most recent commit: 11-10-2019
 #===========================================
 
 rm(list=ls())
@@ -24,7 +24,7 @@ args <- as.integer(args)
 url_base <- "https://www.breitbart.com"
 
 # load urls
-#links <- readRDS(paste0("/Volumes/Potosi/Research/Data/Breitbart/links/links", args, ".rds")) %>% unlist() %>% unname()  # local
+#links <- readRDS(paste0("/Volumes/Potosi/Research/Data/Breitbart/Outputs/links", args, ".rds")) %>% unlist() %>% unname()  # local
 links <- readRDS(paste0("/scratch/plr250/Scraper/Breitbart/Outputs/links", args, ".rds")) %>% unlist() %>% unname()
 #link_dates <- names(links)
 #links <- unname(unlist(links))
@@ -32,16 +32,16 @@ links <- readRDS(paste0("/scratch/plr250/Scraper/Breitbart/Outputs/links", args,
 try_scrape <- function(link){
   error_message <- TRUE
   while(error_message){
-    pg <- tryCatch(read_html(paste0(url_base, links[5])), error=function(e) e)
-  if(is.null(pg$message)){error_message <- FALSE}
-  Sys.sleep(sample(10, 1) * 0.1)}
+    pg <- tryCatch(read_html(paste0(url_base, link)), error=function(e) e)
+    if(is.null(pg$message)){error_message <- FALSE}
+    Sys.sleep(sample(10, 1) * 0.1)}
   return(pg)
 }
 
 # read html
 process_link <- function(link){
   #pg <- read_html(paste0(url_base, link))
-  pg <- try_scrape(paste0(url_base, link))
+  pg <- try_scrape(link)
   headline <- html_nodes(pg, '#MainW h1') %>% html_text() %>% str_trim()
   headline_subtitle <- html_nodes(pg, '#MainW h2') %>% html_text() %>% str_trim()
   date <- html_nodes(pg, 'time') %>% html_text() %>% str_trim()
@@ -56,13 +56,14 @@ process_link <- function(link){
 #library(pbapply)
 scraped_data <- lapply(links, process_link)
 
-#library(progress)
-#scraped_data <- list()
-#pb <- progress_bar$new(total = length(links))
-#for(i in 1:length(links)){
-#  scraped_data[[i]] <- process_link(links[i])
-#  pb$tick()
-#  }
+library(progress)
+scraped_data <- list()
+pb <- progress_bar$new(total = length(links))
+for(i in 1:length(links)){
+  scraped_data[[i]] <- process_link(links[i])
+  print(i)
+  pb$tick()
+  }
 
 # save text
 saveRDS(scraped_data, paste0("/scratch/plr250/Scraper/Breitbart/Outputs/text", args, ".rds"))

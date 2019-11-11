@@ -36,30 +36,43 @@ div_10 <- function(x) x[x %% 10 == 0]
 loadMoreButtonExists <- TRUE 
 i <- 1
 
+links <- vector()
 start_time <- proc.time()
 #while(loadMoreButtonExists & i <=10){ # while load "Load More Articles" button appears
 while(loadMoreButtonExists){   
   webElem <- try(remDr$findElement(using = "xpath", value = "//*[@id='zone-twilight2']/section/button"))  # find button
   if(class(webElem) == "try-error"){loadMoreButtonExists <- FALSE}  # check if search for button yields a search error
   if(loadMoreButtonExists){webElem$clickElement()}  # if button exists, click on it
+  
   Sys.sleep(4)                                     # rest  (10 seconds is probably too conservative)
+  
   if(length(div_10(i)) == 1){
+    
     # read html
     page_source <- unlist(remDr$getPageSource())
     pg <- read_html(page_source)
+    
+    # extract links
+    all_urls <- html_attr(html_nodes(pg, "a"), "href")
+    
+    # from links extract relevant ones
+    links <- unique(all_urls[grepl("entry", all_urls)])
+    
+    # print summary
+    cat("number of unique links scraped", length(unique(links)), "\n")
   }
+  
+  # print summary
   cat("number of button presses", i, "\n")
+  
   i <- i + 1
 }
 proc.time() - start_time
 
 # read html
-page_source2 <- unlist(remDr$getPageSource())
-pg2 <- read_html(page_source)
+page_source <- unlist(remDr$getPageSource())
+pg <- read_html(page_source)
   
-# extract links
-all_urls <- html_attr(html_nodes(pg, "a"), "href")
-
 # from links extract relevant ones
 links <- all_urls[grepl("https://www.huffpost.com/entry/", all_urls)] %>% unique()
   
@@ -69,9 +82,8 @@ remDr$close()
 # stop the selenium server
 rD[["server"]]$stop()
 
-# IMPORTANT: on the terminal press "Ctrl + C" to close driver
-# save list of links
-#saveRDS(links, paste0(in_path, "links.rds"))
+
+
 
 #===========================================
 # SCRAPE TEXT USING SCRAPED LINKS
