@@ -17,10 +17,9 @@ files <- as.list(list.files(in_path))
 files_text <- files[grepl(pattern = "text", x = files)] %>% unlist() # text
 files_link <- files[grepl(pattern = "link", x = files)] %>% unlist() # text
 
-# buld links tibble for checking purposes
+# build links tibble for checking purposes
 links <- pblapply(files_link, function(x) readRDS(paste0(in_path, x)) %>% unlist() %>% unname()) %>% unlist
-links[grepl("central-american", links)]
-  
+
 # ================================
 # load and pre-process data
 # ================================
@@ -52,11 +51,11 @@ for(i in 1:length(files_text)){
   texts <- do.call(rbind, texts) %>% as_tibble
   
   # pre-process
-  #texts$text <- gsub("’", "", texts$text) # remove apostrophes
-  #texts$text <- gsub("[^[:alpha:]]", " ", texts$text) # remove all non-alpha characters
-  #texts$text <- str_replace_all(texts$text, "^ +| +$|( ) +", "\\1")  # remove excess white space
-  #texts$text <- tolower(texts$text)  # lowercase
-  #texts <- texts[texts$text!="",] # remove nuls
+  texts$text <- gsub("’", "", texts$text) # remove apostrophes
+  texts$text <- gsub("[^[:alpha:]]", " ", texts$text) # remove all non-alpha characters
+  texts$text <- str_replace_all(texts$text, "^ +| +$|( ) +", "\\1")  # remove excess white space
+  texts$text <- tolower(texts$text)  # lowercase
+  texts <- texts[texts$text!="",] # remove nuls
   
   # store
   corpus[[i]] <- texts

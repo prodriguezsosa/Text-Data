@@ -2,8 +2,8 @@
 
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=03:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --time=10:00:00
 #SBATCH --mem=10GB
 #SBATCH --job-name=TextScraper
 #SBATCH --mail-type=END
