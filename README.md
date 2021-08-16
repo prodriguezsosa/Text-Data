@@ -35,3 +35,9 @@ Source: http://www.congreso.es/portal/page/portal/Congreso/Congreso/Publicacione
 Type of text: legislature transcripts\
 Source: http://pdok.bundestag.de/index.php?q=plenarprotokoll&dart=Plenarprotokoll (last accessed Oct-15-2018)\
 [Link to Data (497 MB)](https://www.dropbox.com/sh/297wb8ej7ojuhf6/AACW2XXIzl5pQJAGLjFuifA1a?dl=0)
+
+**7. Immigration in the Tennessean News (2010 - 2019)**
+Type of text: news headlines and content on the topic of immigration in the U.S.
+Source: this data was collected by the text as data team of the [Research on Conflict and Collective Action (ROCCA) Lab]{https://lab.vanderbilt.edu/rocca/}
+[Link to Repository and Data](https://github.com/prodriguezsosa/ROCCA-TAD)
+
