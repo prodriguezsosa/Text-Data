@@ -38,6 +38,6 @@ Source: http://pdok.bundestag.de/index.php?q=plenarprotokoll&dart=Plenarprotokol
 
 **7. Immigration in the Tennessean News (2010 - 2019)**\
 Type of text: news headlines and content on the topic of immigration in the U.S.\
-Source: this data was collected by the text as data team of the [Research on Conflict and Collective Action (ROCCA) Lab]{https://lab.vanderbilt.edu/rocca/}\
+Source: collected by the text as data team of the [Research on Conflict and Collective Action (ROCCA) Lab](https://lab.vanderbilt.edu/rocca/) (last updated Mar-2020)\
 [Link to Repository and Data](https://github.com/prodriguezsosa/ROCCA-TAD)
 
